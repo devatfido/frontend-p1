@@ -86,6 +86,8 @@ function App() {
                     Mint Identity
                   </button>
                   {isTokenIdFetched && <p>Token ID: {tokenId}</p>}
+                  <br />
+                  {isTokenIdFetched && <a href={"/get-token"}>Claim Token</a>}
               </div>
           }
 
