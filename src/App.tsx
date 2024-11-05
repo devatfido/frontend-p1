@@ -1,10 +1,11 @@
 import './App.css'
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useAccount, useWriteContract } from 'wagmi'
+import { useAccount, useWriteContract, useTransactionReceipt } from 'wagmi'
 import {SBTMintABI} from "./abi/SBT.ts";
 import {useState} from "react";
 import { useQuery } from '@tanstack/react-query'
 import { keccak256, encodePacked } from 'viem'
+import {a} from "vite/dist/node/types.d-aGj9QkWt";
 
 interface Claim {
   claim: string[]
@@ -25,14 +26,48 @@ const fetchClaim = async () => {
 }
 
 function App() {
+  const [mintTx, setMintTx] = useState<`0x${string}` | null>(null)
   const { address, status } = useAccount()
-  const { writeContract } = useWriteContract()
+  const { writeContractAsync } = useWriteContract()
 
   const {data: claim, isFetched: isClaimIssued } = useQuery<Claim>({
     queryKey: ['todos'],
     queryFn: fetchClaim,
     enabled: Boolean(address),
   })
+
+  const result = useTransactionReceipt({
+    hash: mintTx as `0x${string}`,
+    query: {
+      enabled: Boolean(mintTx),
+    },
+  })
+
+  const {data: tokenId, isFetched: isTokenIdFetched} = useQuery({
+    queryKey: ['get-token-id'],
+    queryFn: async () => {
+      const tokenIdHex = (result?.data as any)?.logs[0]?.topics[3]
+      const tokenId = BigInt(tokenIdHex).toString();
+      return tokenId
+    },
+    enabled: Boolean(result?.data),
+  })
+
+  const mintSBT = async () => {
+    const tx = await writeContractAsync({
+      abi: SBTMintABI,
+      address: "0xA36711a526CF7c05166542709C67507ffd6bF580",
+      functionName: "mint",
+      args: [
+        address,
+        "https://bafybeibodo3cnumo76lzdf2dlatuoxtxahgowxuihwiqeyka7k2qt7eupy.ipfs.nftstorage.link/",
+        // eslint-disable-next-line
+        keccak256(encodePacked(["uint", "uint", "uint"], [claim?.sigR8x as any, claim?.sigR8y as any, claim?.sigS as any])),
+      ],
+    })
+
+    setMintTx(tx)
+  }
 
   return (
     <main className="App">
@@ -46,20 +81,11 @@ function App() {
               <div>
                   <p>Connected: {address}</p>
                   <button
-                    onClick={() => writeContract({
-                      abi: SBTMintABI,
-                      address: "0x6ed8b2fb300B533759e624Fde1ce98BFDf16Ef14",
-                      functionName: "mint",
-                      args: [
-                          address,
-                          "https://bafybeibodo3cnumo76lzdf2dlatuoxtxahgowxuihwiqeyka7k2qt7eupy.ipfs.nftstorage.link/",
-                          // eslint-disable-next-line
-                          keccak256(encodePacked(["uint", "uint", "uint"], [claim?.sigR8x as any, claim?.sigR8y as any, claim?.sigS as any])),
-                      ],
-                    })}
+                      onClick={mintSBT}
                   >
                     Mint Identity
                   </button>
+                  {isTokenIdFetched && <p>Token ID: {tokenId}</p>}
               </div>
           }
 
