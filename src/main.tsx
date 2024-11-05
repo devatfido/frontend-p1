@@ -19,6 +19,7 @@ import {
     QueryClientProvider,
     QueryClient,
 } from "@tanstack/react-query";
+import ClaimToken from "./ClaimToken.tsx";
 
 const config = getDefaultConfig({
     appName: 'Fido Poc',
@@ -39,7 +40,7 @@ const router = createBrowserRouter([
     },
     {
         path: "/get-token",
-        element: <div>get-token</div>,
+        element: <ClaimToken />,
     },
 ]);
 

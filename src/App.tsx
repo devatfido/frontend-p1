@@ -5,7 +5,6 @@ import {SBTMintABI} from "./abi/SBT.ts";
 import {useState} from "react";
 import { useQuery } from '@tanstack/react-query'
 import { keccak256, encodePacked } from 'viem'
-import {a} from "vite/dist/node/types.d-aGj9QkWt";
 
 interface Claim {
   claim: string[]
@@ -27,6 +26,7 @@ const fetchClaim = async () => {
 
 function App() {
   const [mintTx, setMintTx] = useState<`0x${string}` | null>(null)
+  const [isMinting, setIsMinting] = useState(false)
   const { address, status } = useAccount()
   const { writeContractAsync } = useWriteContract()
 
@@ -54,6 +54,7 @@ function App() {
   })
 
   const mintSBT = async () => {
+    setIsMinting(true)
     const tx = await writeContractAsync({
       abi: SBTMintABI,
       address: "0xA36711a526CF7c05166542709C67507ffd6bF580",
@@ -67,6 +68,7 @@ function App() {
     })
 
     setMintTx(tx)
+    setIsMinting(false)
   }
 
   return (
@@ -82,12 +84,13 @@ function App() {
                   <p>Connected: {address}</p>
                   <button
                       onClick={mintSBT}
+                      aria-busy={isMinting}
                   >
                     Mint Identity
                   </button>
                   {isTokenIdFetched && <p>Token ID: {tokenId}</p>}
                   <br />
-                  {isTokenIdFetched && <a href={"/get-token"}>Claim Token</a>}
+                  {isTokenIdFetched && <a href={`/get-token?tokenId=${tokenId}`}>Claim Token</a>}
               </div>
           }
 
